@@ -2,9 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class UserModel(BaseModel):
-    name: str = Field(alias="userName")
+    name: str
     password: str
-    role: int = Field(default=0, alias="userRole")
-    
+    is_admin: bool
+        
 class UserModelPublic(BaseModel):
-    name: str = Field(alias="userName")
+    name: str
+    is_admin: bool = Field(alias="isAdmin")
