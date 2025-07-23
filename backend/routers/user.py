@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Response, Depends, status
-from auth.auth import get_hashed_password
 from auth.dependencies import get_current_active_user, get_current_active_admin_user
 from database.user import static_users
 from models.user import UserModel, UserPublic, UserCreate, UserUpdate
@@ -17,12 +16,8 @@ def create_user(user: UserCreate, _: UserModel = Depends(dependency=get_current_
     if any(db_user["name"] == user.name for db_user in static_users):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this username already exists")
     
-    # for demo
-    user.id = len(static_users) + 1
-    user.password = get_hashed_password(plain_password=user.password)
-    static_users.append(user.model_dump())
-    
-    return user # type: ignore
+    static_users.append(user.model_dump()) # for demo
+    return UserPublic(id=len(static_users), **user.model_dump())
 
 @router.get(path="/me", response_model=UserPublic)
 def me(user: UserModel = Depends(dependency=get_current_active_user)) -> UserPublic:
