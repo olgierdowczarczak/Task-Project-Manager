@@ -5,59 +5,62 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 import os
 from .auth import verify_password
+from database.user import static_users
 from models.user import UserModel
 from models.token import TokenData
 
 
 oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(tokenUrl="token")
 
-# fake db
-static_users: dict[str, Any] = {
-    "tester1": {
-        "name": "tester1",
-        "password": "$2b$12$NslLj1flO6ce04lTGj6OHupbdVdTTG4AToP7dEJ7vw.YTcaAIouPq", # testpwd
-        "is_admin": 1
-    }
-}
-
-def get_user(username: str) -> UserModel | None:
-    data: Any | None = static_users.get(username)
-    return UserModel(**data) if data else None
+def get_user(data: str|int) -> UserModel | None:
+    user: Any | None = next((user for user in static_users if user["id"] == data), None) \
+        if isinstance(data, int) else next((user for user in static_users if user["name"] == data), None)
+    return UserModel(**user) if user else None
     
 def authenticate_user(username: str, password: str) -> None | UserModel:
-    user: UserModel | None = get_user(username=username)
+    user: UserModel | None = get_user(data=username)
     if not user:
         return None
-    
+
     if not verify_password(plain_password=password, hashed_password=user.password):
         return None
     
     return user
 
 def get_current_user(token: str = Depends(dependency=oauth2_scheme)) -> UserModel:
-    credentials_exception: HTTPException = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
     try:
-        payload: dict[Any, str] = jwt.decode(jwt=token, key=os.environ.get("CODE_KEY"), algorithms=[os.environ.get("CODE_ALGORITHM", default="")])
-        username: str | None = payload.get("sub")
+        username: str | None = jwt.decode(jwt=token, key=os.environ.get("CODE_KEY"), algorithms=[os.environ.get("CODE_ALGORITHM", default="")]).get("sub")
         if not username:
-            raise credentials_exception
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         
         token_data: TokenData = TokenData(name=username)
     except:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
         
-    user: UserModel | None = get_user(username=token_data.name)
+    user: UserModel | None = get_user(data=token_data.name)
     if not user:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     return user
 
 def get_current_active_user(user: UserModel = Depends(dependency=get_current_user)) -> UserModel:
+    return user
+
+def get_current_active_admin_user(user: UserModel = Depends(dependency=get_current_user)) -> UserModel:
+    if user.is_admin is False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
     return user
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
