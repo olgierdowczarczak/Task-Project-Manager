@@ -1,5 +1,5 @@
 from typing import Any
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field
 from auth.auth import get_hashed_password
 
 
@@ -23,7 +23,6 @@ class UserPublic(BaseModel):
         populate_by_name = True
         
 class UserCreate(BaseModel):
-    _id: int = PrivateAttr()
     name: str
     password: str
     is_admin: bool = Field(alias="isAdmin")
