@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class ProjectModel(BaseModel):
     id: int
     name: str
-    manager_id: int = Field(alias="managerId")
+    user_id: int = Field(alias="userId")
     
     class Config:
         allow_population_by_field_name = True
@@ -13,7 +13,7 @@ class ProjectModel(BaseModel):
 class ProjectPublic(BaseModel):
     id: int
     name: str
-    manager_id: int = Field(alias="managerId")
+    user_id: int = Field(alias="userId")
     
     class Config:
         allow_population_by_field_name = True
@@ -21,10 +21,10 @@ class ProjectPublic(BaseModel):
     
 class ProjectCreate(BaseModel):
     name: str
-    manager_id: int = Field(default=0, alias="managerId")
+    user_id: int = Field(default=0, alias="userId")
     
 class ProjectUpdate(BaseModel):
-    manager_id: int = Field(alias="managerId")
+    user_id: int = Field(alias="userId")
     
     class Config:
         allow_population_by_field_name = True
