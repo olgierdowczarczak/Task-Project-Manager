@@ -17,10 +17,6 @@ def get_all_users(q: str="", _: UserModel = Depends(dependency=get_current_activ
 def create_user(user: UserCreate, _: UserCreate = Depends(dependency=get_current_active_admin_user), session: Session = Depends(dependency=get_db)) -> Any:
     return create_user_in_db(session=session, user=user)
 
-@router.get(path="/me", response_model=UserPublic)
-def get_me(user: UserModel = Depends(dependency=get_current_active_admin_user)) -> Any:
-    return user
-
 @router.get(path="/{id}", response_model=UserPublic)
 def get_user(id: int, _: UserModel = Depends(dependency=get_current_active_admin_user), session: Session = Depends(dependency=get_db)) -> Any:
     return get_user_by_id(session=session, id=id)
